@@ -6,6 +6,7 @@ import TemplateChips from "@/components/studio/TemplateChips";
 import DesignResult from "@/components/studio/DesignResult";
 import WorkingIndicator from "@/components/studio/WorkingIndicator";
 import FabricSelector from "@/components/studio/FabricSelector";
+import { VIEW_TYPES } from "@/lib/viewTypes";
 
 export default function Studio() {
   const [messages, setMessages] = useState([]);
@@ -49,8 +50,8 @@ Create a design concept. Respond with:
           ? `exactly these ${selectedFabrics.length} fabrics from the client's own library — use their exact names and honor their described texture and pattern: ${selectedFabrics
               .map((f) => `"${f.name}"${f.description ? ` (${f.description})` : ""}`)
               .join(", ")}`
-          : `exactly 3 distinct fabrics that suit this piece`
-      }, each with "fabric" (the fabric name) and "render_prompt" (detailed prompt for a photorealistic studio product photo of this exact garment made in that fabric, on a mannequin or model, soft studio lighting, neutral background)`,
+          : `exactly 2 distinct fabrics that suit this piece`
+      }, each with "fabric" (the fabric name), "colorway" (a short, evocative colour name for the piece in that fabric) and "render_prompt" (a detailed description of this exact garment made in that fabric — the garment, its construction and its colour only, with no camera angle or framing mentioned, since the angle will be added separately)`,
       response_json_schema: {
         type: "object",
         properties: {
@@ -63,6 +64,7 @@ Create a design concept. Respond with:
               type: "object",
               properties: {
                 fabric: { type: "string" },
+                colorway: { type: "string" },
                 render_prompt: { type: "string" },
               },
             },
@@ -80,18 +82,26 @@ Create a design concept. Respond with:
       ...(imageUrls.length > 0 ? { existing_image_urls: imageUrls } : {}),
     });
 
-    setWorking("Rendering it in different fabrics…");
-    const chosen = selectedFabrics.length > 0 ? spec.fabrics.slice(0, selectedFabrics.length) : spec.fabrics.slice(0, 3);
+    setWorking("Shooting every angle in each fabric…");
+    const chosen = selectedFabrics.length > 0 ? spec.fabrics.slice(0, selectedFabrics.length) : spec.fabrics.slice(0, 2);
+    const jobs = chosen.flatMap((f, i) =>
+      VIEW_TYPES.map((v) => ({ f, v, swatch: selectedFabrics[i]?.swatch_url }))
+    );
     const renders = await Promise.all(
-      chosen.map(async (f, i) => {
-        const swatch = selectedFabrics[i]?.swatch_url;
-        const img = await base44.integrations.Core.GenerateImage({
-          prompt: swatch
-            ? `${f.render_prompt}. The second reference image is the exact fabric swatch — match its texture, pattern, weave and color precisely.`
-            : f.render_prompt,
-          existing_image_urls: swatch ? [sketch.url, swatch] : [sketch.url],
-        });
-        return { fabric: f.fabric, url: img.url };
+      jobs.map(async ({ f, v, swatch }) => {
+        const prompt = `${v.prompt}. Garment: ${f.render_prompt}. The first reference image is the design sketch — keep the garment identical to it.${
+          swatch ? " The second reference image is the exact fabric swatch — match its texture, pattern, weave and colour precisely." : ""
+        }${v.id === "technical_flat" ? "" : " Soft professional studio lighting, neutral background."}`;
+        const existing = swatch ? [sketch.url, swatch] : [sketch.url];
+        const img = await base44.integrations.Core.GenerateImage({ prompt, existing_image_urls: existing });
+        return {
+          fabric: f.fabric,
+          url: img.url,
+          view_type: v.label,
+          colorway: f.colorway || "",
+          version: 1,
+          settings: { prompt, swatch_url: swatch || "", sketch_url: sketch.url },
+        };
       })
     );
 

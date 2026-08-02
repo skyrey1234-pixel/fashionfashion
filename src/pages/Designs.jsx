@@ -49,7 +49,7 @@ export default function Designs() {
               <p className="text-xs text-stone-500 mt-1 line-clamp-2">{d.description}</p>
               {d.renders?.length > 0 && (
                 <p className="text-[11px] uppercase tracking-widest text-amber-800 mt-3">
-                  {d.renders.map((r) => r.fabric).join(" · ")}
+                  {[...new Set(d.renders.map((r) => r.fabric))].join(" · ")}
                 </p>
               )}
             </div>

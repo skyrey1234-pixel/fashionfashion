@@ -21,6 +21,29 @@
           },
           "url": {
             "type": "string"
+          },
+          "view_type": {
+            "type": "string"
+          },
+          "colorway": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          },
+          "settings": {
+            "type": "object",
+            "properties": {
+              "prompt": {
+                "type": "string"
+              },
+              "swatch_url": {
+                "type": "string"
+              },
+              "sketch_url": {
+                "type": "string"
+              }
+            }
           }
         }
       }

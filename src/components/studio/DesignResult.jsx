@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Image } from "@/components/ui/image";
 import { PenTool, Shirt, Columns3 } from "lucide-react";
 import FabricComparison from "@/components/studio/FabricComparison";
+import RenderGallery from "@/components/studio/RenderGallery";
 
 export default function DesignResult({ design }) {
   const [compareOpen, setCompareOpen] = useState(false);
@@ -33,14 +34,7 @@ export default function DesignResult({ design }) {
             </button>
           </div>
           <FabricComparison design={design} open={compareOpen} onOpenChange={setCompareOpen} />
-          <div className="grid grid-cols-2 gap-3">
-            {design.renders.map((r) => (
-              <div key={r.fabric}>
-                <Image src={r.url} alt={`${design.name} in ${r.fabric}`} className="w-full aspect-[3/4] rounded-xl border border-stone-200" />
-                <p className="text-xs text-stone-500 mt-1.5 text-center italic">{r.fabric}</p>
-              </div>
-            ))}
-          </div>
+          <RenderGallery renders={design.renders} />
         </div>
       )}
     </div>
