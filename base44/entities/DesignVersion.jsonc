@@ -1,0 +1,71 @@
+{
+  "name": "DesignVersion",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string"
+    },
+    "parent_version_id": {
+      "type": "string"
+    },
+    "version_number": {
+      "type": "number"
+    },
+    "label": {
+      "type": "string"
+    },
+    "edit_prompt": {
+      "type": "string"
+    },
+    "sketch_url": {
+      "type": "string"
+    },
+    "renders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "fabric": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "view_type": {
+            "type": "string"
+          },
+          "colorway": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          },
+          "settings": {
+            "type": "object",
+            "properties": {
+              "prompt": {
+                "type": "string"
+              },
+              "swatch_url": {
+                "type": "string"
+              },
+              "sketch_url": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "locked_attributes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "project_id",
+    "version_number"
+  ]
+}

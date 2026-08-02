@@ -1,0 +1,38 @@
+{
+  "name": "DesignProject",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "original_prompt": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "current_version_id": {
+      "type": "string"
+    },
+    "selected_fabric_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "cover_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
