@@ -16,6 +16,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import Layout from '@/components/Layout';
 import Studio from '@/pages/Studio';
 import Designs from '@/pages/Designs';
+import Fabrics from '@/pages/Fabrics';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
         <Route element={<Layout />}>
           <Route path="/" element={<Studio />} />
           <Route path="/designs" element={<Designs />} />
+          <Route path="/fabrics" element={<Fabrics />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

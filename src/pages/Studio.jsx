@@ -5,10 +5,12 @@ import ChatInput from "@/components/studio/ChatInput";
 import TemplateChips from "@/components/studio/TemplateChips";
 import DesignResult from "@/components/studio/DesignResult";
 import WorkingIndicator from "@/components/studio/WorkingIndicator";
+import FabricSelector from "@/components/studio/FabricSelector";
 
 export default function Studio() {
   const [messages, setMessages] = useState([]);
   const [working, setWorking] = useState(null);
+  const [selectedFabrics, setSelectedFabrics] = useState([]);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -42,7 +44,13 @@ Create a design concept. Respond with:
 - name: a chic, short name for the piece (max 5 words)
 - summary: 2-3 sentences describing the design (silhouette, details, mood) written warmly to the client
 - sketch_prompt: a detailed prompt for generating a black-and-white fashion illustration sketch of this exact garment on a croquis figure, pencil/ink style, white background
-- fabrics: exactly 3 distinct fabrics that suit this piece, each with "fabric" (short fabric name, e.g. "Ivory Silk Charmeuse") and "render_prompt" (detailed prompt for a photorealistic studio product photo of this exact garment made in that fabric, on a mannequin or model, soft studio lighting, neutral background)`,
+- fabrics: ${
+        selectedFabrics.length > 0
+          ? `exactly these ${selectedFabrics.length} fabrics from the client's own library — use their exact names and honor their described texture and pattern: ${selectedFabrics
+              .map((f) => `"${f.name}"${f.description ? ` (${f.description})` : ""}`)
+              .join(", ")}`
+          : `exactly 3 distinct fabrics that suit this piece`
+      }, each with "fabric" (the fabric name) and "render_prompt" (detailed prompt for a photorealistic studio product photo of this exact garment made in that fabric, on a mannequin or model, soft studio lighting, neutral background)`,
       response_json_schema: {
         type: "object",
         properties: {
@@ -73,11 +81,15 @@ Create a design concept. Respond with:
     });
 
     setWorking("Rendering it in different fabrics…");
+    const chosen = selectedFabrics.length > 0 ? spec.fabrics.slice(0, selectedFabrics.length) : spec.fabrics.slice(0, 3);
     const renders = await Promise.all(
-      spec.fabrics.slice(0, 3).map(async (f) => {
+      chosen.map(async (f, i) => {
+        const swatch = selectedFabrics[i]?.swatch_url;
         const img = await base44.integrations.Core.GenerateImage({
-          prompt: f.render_prompt,
-          existing_image_urls: [sketch.url],
+          prompt: swatch
+            ? `${f.render_prompt}. The second reference image is the exact fabric swatch — match its texture, pattern, weave and color precisely.`
+            : f.render_prompt,
+          existing_image_urls: swatch ? [sketch.url, swatch] : [sketch.url],
         });
         return { fabric: f.fabric, url: img.url };
       })
@@ -135,6 +147,7 @@ Create a design concept. Respond with:
         <div ref={bottomRef} />
       </div>
       <div className="sticky bottom-0 pb-6 pt-2 bg-gradient-to-t from-[#faf8f4] via-[#faf8f4] to-transparent">
+        <FabricSelector selected={selectedFabrics} setSelected={setSelectedFabrics} disabled={!!working} />
         <ChatInput onSend={handleSend} disabled={!!working} />
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Sparkles, GalleryVerticalEnd } from "lucide-react";
+import { Sparkles, GalleryVerticalEnd, Layers } from "lucide-react";
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -18,6 +18,9 @@ export default function Layout() {
           <nav className="flex items-center gap-1">
             <Link to="/" className={linkCls(pathname === "/")}>
               <Sparkles className="w-4 h-4" /> Studio
+            </Link>
+            <Link to="/fabrics" className={linkCls(pathname === "/fabrics")}>
+              <Layers className="w-4 h-4" /> Fabrics
             </Link>
             <Link to="/designs" className={linkCls(pathname === "/designs")}>
               <GalleryVerticalEnd className="w-4 h-4" /> My Designs
