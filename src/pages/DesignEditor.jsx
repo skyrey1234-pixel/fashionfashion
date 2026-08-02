@@ -2,18 +2,20 @@ import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Camera } from "lucide-react";
+import { Loader2, Camera, Lasso } from "lucide-react";
 import RenderGallery from "@/components/studio/RenderGallery";
 import VersionHistory from "@/components/editor/VersionHistory";
 import EditorChat from "@/components/editor/EditorChat";
 import QuickEdits from "@/components/editor/QuickEdits";
-import { renderEdit, renderRemainingViews } from "@/lib/designEngine";
+import RegionEditor from "@/components/editor/RegionEditor";
+import { renderEdit, renderRegionEdit, renderRemainingViews } from "@/lib/designEngine";
 
 export default function DesignEditor() {
   const { id } = useParams();
   const qc = useQueryClient();
   const [working, setWorking] = useState(null);
   const [viewingId, setViewingId] = useState(null);
+  const [regionOpen, setRegionOpen] = useState(false);
 
   const { data: project } = useQuery({
     queryKey: ["project", id],
@@ -44,19 +46,7 @@ export default function DesignEditor() {
     qc.invalidateQueries({ queryKey: ["messages", id] });
   };
 
-  const handleEdit = async (text) => {
-    await base44.entities.DesignMessage.create({ project_id: id, version_id: current.id, role: "user", text });
-    refresh();
-    const nextNumber = Math.max(...versions.map((v) => v.version_number)) + 1;
-    setWorking(`Creating V${nextNumber}…`);
-
-    const renders = await renderEdit({
-      renders: current.renders || [],
-      instruction: text,
-      lockedAttributes: current.locked_attributes || [],
-      version: nextNumber,
-    });
-
+  const commitVersion = async ({ text, renders, nextNumber }) => {
     const version = await base44.entities.DesignVersion.create({
       project_id: id,
       parent_version_id: current.id,
@@ -78,6 +68,44 @@ export default function DesignEditor() {
     setWorking(null);
     refresh();
   };
+
+  const handleEdit = async (text) => {
+    await base44.entities.DesignMessage.create({ project_id: id, version_id: current.id, role: "user", text });
+    refresh();
+    const nextNumber = Math.max(...versions.map((v) => v.version_number)) + 1;
+    setWorking(`Creating V${nextNumber}…`);
+    const renders = await renderEdit({
+      renders: current.renders || [],
+      instruction: text,
+      lockedAttributes: current.locked_attributes || [],
+      version: nextNumber,
+    });
+    await commitVersion({ text, renders, nextNumber });
+  };
+
+  const handleRegionEdit = async ({ instruction, annotatedUrl, fabric }) => {
+    const text = `Change only the circled area: ${instruction}`;
+    await base44.entities.DesignMessage.create({ project_id: id, version_id: current.id, role: "user", text });
+    refresh();
+    const nextNumber = Math.max(...versions.map((v) => v.version_number)) + 1;
+    setWorking(`Editing the marked area — creating V${nextNumber}…`);
+    const renders = await renderRegionEdit({
+      renders: current.renders || [],
+      instruction,
+      annotatedUrl,
+      fabric,
+      lockedAttributes: current.locked_attributes || [],
+      version: nextNumber,
+    });
+    await commitVersion({ text, renders, nextNumber });
+  };
+
+  const regionTargets = [...new Set((current.renders || []).map((r) => r.fabric))]
+    .map((f) => {
+      const group = (current.renders || []).filter((r) => r.fabric === f);
+      return group.find((r) => r.view_type === "Front") || group[0];
+    })
+    .filter(Boolean);
 
   const handleRestore = async (v) => {
     await base44.entities.DesignProject.update(id, { current_version_id: v.id, cover_url: v.renders?.[0]?.url });
@@ -113,6 +141,16 @@ export default function DesignEditor() {
           ) : (
             <p className="text-sm text-stone-500">No renders in this version.</p>
           )}
+          <div className="flex flex-wrap items-center gap-5">
+            <button
+              onClick={() => setRegionOpen(true)}
+              disabled={!!working || regionTargets.length === 0}
+              className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-amber-800 hover:text-stone-900 transition-colors disabled:opacity-40"
+            >
+              <Lasso className="w-3.5 h-3.5" /> Edit an area
+            </button>
+          </div>
+          <RegionEditor open={regionOpen} onOpenChange={setRegionOpen} targets={regionTargets} onSubmit={handleRegionEdit} />
           {missingAngles && (
             <button
               onClick={handleAllAngles}

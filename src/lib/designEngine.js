@@ -108,6 +108,38 @@ export async function renderEdit({ renders, instruction, lockedAttributes = [], 
   );
 }
 
+/**
+ * Apply an edit only to a user-marked region. The annotated image carries red brush
+ * strokes over the region to change; other fabrics get the same edit from plain text.
+ */
+export async function renderRegionEdit({ renders, instruction, annotatedUrl, fabric, version, lockedAttributes = [] }) {
+  const locks =
+    lockedAttributes.length > 0
+      ? ` These elements are locked and must stay exactly as they are: ${lockedAttributes.join(", ")}.`
+      : "";
+  return Promise.all(
+    groupByFabric(renders).map(async (group) => {
+      const base = primaryOf(group);
+      const marked = base.fabric === fabric;
+      const prompt = marked
+        ? `The reference image is a garment photo with a region marked in bright red brush strokes. Apply this edit ONLY inside the marked region: ${instruction}. Everything outside the marked region must stay pixel-identical, and the red markings themselves must be completely removed from the result. ${PRESERVE}${locks}`
+        : `Edit the garment in the reference image: ${instruction} (applied only to that specific area of the garment). ${PRESERVE}${locks}`;
+      const img = await base44.integrations.Core.GenerateImage({
+        prompt,
+        existing_image_urls: [marked ? annotatedUrl : base.url],
+      });
+      return {
+        fabric: base.fabric,
+        url: img.url,
+        view_type: "Front",
+        colorway: base.colorway || "",
+        version,
+        settings: { prompt, swatch_url: base.settings?.swatch_url || "", sketch_url: base.settings?.sketch_url || "" },
+      };
+    })
+  );
+}
+
 /** Fill in every remaining camera angle for a version, using its Front image as the reference. */
 export async function renderRemainingViews({ renders, version }) {
   const jobs = groupByFabric(renders).flatMap((group) => {
