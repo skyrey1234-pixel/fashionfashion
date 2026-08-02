@@ -18,6 +18,7 @@ import Studio from '@/pages/Studio';
 import Designs from '@/pages/Designs';
 import Fabrics from '@/pages/Fabrics';
 import DesignEditor from '@/pages/DesignEditor';
+import Gallery from '@/pages/Gallery';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -55,6 +56,7 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Studio />} />
           <Route path="/designs" element={<Designs />} />
           <Route path="/project/:id" element={<DesignEditor />} />
+          <Route path="/gallery" element={<Gallery />} />
           <Route path="/fabrics" element={<Fabrics />} />
         </Route>
       </Route>
