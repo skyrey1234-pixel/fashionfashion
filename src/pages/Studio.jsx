@@ -17,12 +17,27 @@ export default function Studio() {
 
   const addMessage = (msg) => setMessages((m) => [...m, msg]);
 
-  const handleSend = async (text) => {
-    addMessage({ role: "user", text });
+  const handleSend = async (text, files = []) => {
+    addMessage({ role: "user", text, attachments: files.map((f) => ({ name: f.name, isImage: f.type.startsWith("image/") })) });
+
+    let fileUrls = [];
+    let imageUrls = [];
+    if (files.length > 0) {
+      setWorking("Studying your references…");
+      const uploads = await Promise.all(
+        files.map(async (f) => {
+          const { file_url } = await base44.integrations.Core.UploadFile({ file: f });
+          return { url: file_url, isImage: f.type.startsWith("image/") };
+        })
+      );
+      fileUrls = uploads.map((u) => u.url);
+      imageUrls = uploads.filter((u) => u.isImage).map((u) => u.url);
+    }
     setWorking("Interpreting your vision…");
 
     const spec = await base44.integrations.Core.InvokeLLM({
       prompt: `You are a world-class fashion designer AI. A client asked for this garment: "${text}".
+${fileUrls.length > 0 ? "The client attached reference files — photos of clothing to edit or redesign, and/or documents with specs and notes. Study them carefully and base the design on them, applying the client's requested changes." : ""}
 Create a design concept. Respond with:
 - name: a chic, short name for the piece (max 5 words)
 - summary: 2-3 sentences describing the design (silhouette, details, mood) written warmly to the client
@@ -46,12 +61,16 @@ Create a design concept. Respond with:
           },
         },
       },
+      ...(fileUrls.length > 0 ? { file_urls: fileUrls } : {}),
     });
 
     addMessage({ role: "assistant", text: `${spec.summary}\n\nLet me sketch "${spec.name}" for you…` });
     setWorking("Sketching your design…");
 
-    const sketch = await base44.integrations.Core.GenerateImage({ prompt: spec.sketch_prompt });
+    const sketch = await base44.integrations.Core.GenerateImage({
+      prompt: spec.sketch_prompt,
+      ...(imageUrls.length > 0 ? { existing_image_urls: imageUrls } : {}),
+    });
 
     setWorking("Rendering it in different fabrics…");
     const renders = await Promise.all(
@@ -90,7 +109,22 @@ Create a design concept. Respond with:
         )}
         {messages.map((m, i) => (
           <ChatMessage key={i} role={m.role}>
-            {m.design ? <DesignResult design={m.design} /> : <span className="whitespace-pre-line">{m.text}</span>}
+            {m.design ? (
+              <DesignResult design={m.design} />
+            ) : (
+              <div>
+                <span className="whitespace-pre-line">{m.text}</span>
+                {m.attachments?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {m.attachments.map((a, j) => (
+                      <span key={j} className="text-[11px] bg-stone-700 rounded-full px-2.5 py-0.5">
+                        📎 {a.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </ChatMessage>
         ))}
         {working && (
