@@ -28,7 +28,9 @@ export default function RegionEditor({ open, onOpenChange, targets, onSubmit }) 
       imgRef.current = img;
       setHasStrokes(false);
     };
-    img.src = target.url;
+    // cache-buster: forces a CORS-enabled fetch even if the browser cached
+    // this image from a plain <img> load, which would otherwise taint the canvas
+    img.src = target.url + (target.url.includes("?") ? "&" : "?") + "cors=1";
   }, [target]);
 
   useEffect(() => {
@@ -86,7 +88,7 @@ export default function RegionEditor({ open, onOpenChange, targets, onSubmit }) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-[#faf8f4]">
+      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto bg-[#faf8f4]">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl text-stone-900 font-normal">Edit an Area</DialogTitle>
         </DialogHeader>
@@ -110,10 +112,10 @@ export default function RegionEditor({ open, onOpenChange, targets, onSubmit }) 
             ))}
           </div>
         )}
-        <div className="relative rounded-xl overflow-hidden border border-stone-200 bg-white">
+        <div className="relative rounded-xl overflow-hidden border border-stone-200 bg-white flex justify-center">
           <canvas
             ref={canvasRef}
-            className="w-full h-auto touch-none cursor-crosshair"
+            className="max-w-full max-h-[50vh] w-auto h-auto touch-none cursor-crosshair"
             onMouseDown={start}
             onMouseMove={move}
             onMouseUp={end}
