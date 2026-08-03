@@ -1,11 +1,11 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { base44 } from "@/api/base44Client";
 import { Eraser, Loader2 } from "lucide-react";
 
 export default function RegionEditor({ open, onOpenChange, targets, onSubmit }) {
-  const canvasRef = useRef(null);
-  const imgRef = useRef(null);
+  const overlayRef = useRef(null);
+  const imgElRef = useRef(null);
   const drawing = useRef(false);
   const [targetIndex, setTargetIndex] = useState(0);
   const [hasStrokes, setHasStrokes] = useState(false);
@@ -14,31 +14,29 @@ export default function RegionEditor({ open, onOpenChange, targets, onSubmit }) 
 
   const target = targets[targetIndex];
 
-  const loadImage = useCallback(() => {
-    if (!target || !canvasRef.current) return;
-    const img = new window.Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+  const syncOverlaySize = () => {
+    const img = imgElRef.current;
+    const canvas = overlayRef.current;
+    if (!img || !canvas) return;
+    if (canvas.width !== img.naturalWidth || canvas.height !== img.naturalHeight) {
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
-      imgRef.current = img;
-      setHasStrokes(false);
-    };
-    // cache-buster: forces a CORS-enabled fetch even if the browser cached
-    // this image from a plain <img> load, which would otherwise taint the canvas
-    img.src = target.url + (target.url.includes("?") ? "&" : "?") + "cors=1";
-  }, [target]);
+    }
+  };
 
-  useEffect(() => {
-    if (open) loadImage();
-  }, [open, targetIndex, loadImage]);
+  const clearStrokes = () => {
+    const canvas = overlayRef.current;
+    if (canvas) canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    setHasStrokes(false);
+  };
+
+  const switchTarget = (i) => {
+    setTargetIndex(i);
+    clearStrokes();
+  };
 
   const pos = (e) => {
-    const canvas = canvasRef.current;
+    const canvas = overlayRef.current;
     const rect = canvas.getBoundingClientRect();
     const p = e.touches ? e.touches[0] : e;
     return {
@@ -48,11 +46,13 @@ export default function RegionEditor({ open, onOpenChange, targets, onSubmit }) 
   };
 
   const start = (e) => {
+    syncOverlaySize();
     drawing.current = true;
-    const ctx = canvasRef.current.getContext("2d");
+    const canvas = overlayRef.current;
+    const ctx = canvas.getContext("2d");
     const { x, y } = pos(e);
     ctx.strokeStyle = "rgba(255, 30, 30, 0.85)";
-    ctx.lineWidth = Math.max(6, canvasRef.current.width / 90);
+    ctx.lineWidth = Math.max(6, canvas.width / 90);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
@@ -62,7 +62,7 @@ export default function RegionEditor({ open, onOpenChange, targets, onSubmit }) 
   const move = (e) => {
     if (!drawing.current) return;
     e.preventDefault();
-    const ctx = canvasRef.current.getContext("2d");
+    const ctx = overlayRef.current.getContext("2d");
     const { x, y } = pos(e);
     ctx.lineTo(x, y);
     ctx.stroke();
@@ -76,7 +76,21 @@ export default function RegionEditor({ open, onOpenChange, targets, onSubmit }) 
   const handleSubmit = async () => {
     if (!instruction.trim() || !hasStrokes || uploading) return;
     setUploading(true);
-    const blob = await new Promise((resolve) => canvasRef.current.toBlob(resolve, "image/png"));
+    // Composite the photo + strokes offscreen with a CORS-enabled copy of the image
+    const corsImg = await new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = target.url + (target.url.includes("?") ? "&" : "?") + "cors=1";
+    });
+    const out = document.createElement("canvas");
+    out.width = corsImg.naturalWidth;
+    out.height = corsImg.naturalHeight;
+    const ctx = out.getContext("2d");
+    ctx.drawImage(corsImg, 0, 0);
+    ctx.drawImage(overlayRef.current, 0, 0, out.width, out.height);
+    const blob = await new Promise((resolve) => out.toBlob(resolve, "image/png"));
     const file = new File([blob], "region-edit.png", { type: "image/png" });
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setUploading(false);
@@ -100,7 +114,7 @@ export default function RegionEditor({ open, onOpenChange, targets, onSubmit }) 
             {targets.map((t, i) => (
               <button
                 key={t.fabric}
-                onClick={() => setTargetIndex(i)}
+                onClick={() => switchTarget(i)}
                 className={`text-[11px] uppercase tracking-widest px-3 py-1.5 rounded-full border transition-colors ${
                   i === targetIndex
                     ? "bg-stone-900 text-stone-50 border-stone-900"
@@ -112,26 +126,36 @@ export default function RegionEditor({ open, onOpenChange, targets, onSubmit }) 
             ))}
           </div>
         )}
-        <div className="relative rounded-xl overflow-hidden border border-stone-200 bg-white flex justify-center">
-          <canvas
-            ref={canvasRef}
-            className="max-w-full max-h-[50vh] w-auto h-auto touch-none cursor-crosshair"
-            onMouseDown={start}
-            onMouseMove={move}
-            onMouseUp={end}
-            onMouseLeave={end}
-            onTouchStart={start}
-            onTouchMove={move}
-            onTouchEnd={end}
-          />
-          {hasStrokes && (
-            <button
-              onClick={loadImage}
-              className="absolute top-2 right-2 flex items-center gap-1.5 text-[11px] uppercase tracking-widest bg-white/90 border border-stone-200 rounded-full px-3 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
-            >
-              <Eraser className="w-3.5 h-3.5" /> Clear
-            </button>
-          )}
+        <div className="flex justify-center rounded-xl border border-stone-200 bg-white overflow-hidden">
+          <div className="relative inline-block">
+            <img
+              ref={imgElRef}
+              src={target?.url}
+              alt={target?.fabric}
+              onLoad={syncOverlaySize}
+              className="block max-w-full max-h-[50vh] w-auto h-auto select-none"
+              draggable={false}
+            />
+            <canvas
+              ref={overlayRef}
+              className="absolute inset-0 w-full h-full touch-none cursor-crosshair"
+              onMouseDown={start}
+              onMouseMove={move}
+              onMouseUp={end}
+              onMouseLeave={end}
+              onTouchStart={start}
+              onTouchMove={move}
+              onTouchEnd={end}
+            />
+            {hasStrokes && (
+              <button
+                onClick={clearStrokes}
+                className="absolute top-2 right-2 flex items-center gap-1.5 text-[11px] uppercase tracking-widest bg-white/90 border border-stone-200 rounded-full px-3 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
+              >
+                <Eraser className="w-3.5 h-3.5" /> Clear
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
           <input
