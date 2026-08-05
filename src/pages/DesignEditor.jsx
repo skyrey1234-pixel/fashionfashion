@@ -8,6 +8,7 @@ import VersionHistory from "@/components/editor/VersionHistory";
 import EditorChat from "@/components/editor/EditorChat";
 import QuickEdits from "@/components/editor/QuickEdits";
 import RegionEditor from "@/components/editor/RegionEditor";
+import ExportImages from "@/components/editor/ExportImages";
 import { renderEdit, renderRegionEdit, renderRemainingViews } from "@/lib/designEngine";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -178,6 +179,7 @@ export default function DesignEditor() {
             >
               <Lasso className="w-3.5 h-3.5" /> Edit an area
             </button>
+            <ExportImages projectName={project.name} version={viewing} disabled={!!working} />
           </div>
           <RegionEditor open={regionOpen} onOpenChange={setRegionOpen} targets={regionTargets} onSubmit={handleRegionEdit} />
           {missingAngles && (
