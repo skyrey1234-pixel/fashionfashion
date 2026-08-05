@@ -1,6 +1,30 @@
 import { base44 } from "@/api/base44Client";
 import { VIEW_TYPES } from "@/lib/viewTypes";
 
+const isSafetyBlock = (err) => /Responsible AI|filtered|safety|violat/i.test(err?.message || "");
+
+/** GenerateImage with an automatic softer-phrasing retry when the safety filter blocks the result. */
+async function generateImage(params) {
+  try {
+    return await base44.integrations.Core.GenerateImage(params);
+  } catch (err) {
+    if (!isSafetyBlock(err)) throw err;
+    try {
+      return await base44.integrations.Core.GenerateImage({
+        ...params,
+        prompt: `Tasteful, professional fashion catalog photograph of a fully clothed model in a modest studio setting. ${params.prompt}`,
+      });
+    } catch (err2) {
+      if (!isSafetyBlock(err2)) throw err2;
+      const e = new Error(
+        "The image service declined this request even after rephrasing. Please reword your edit — avoid body-related or suggestive terms — and try again."
+      );
+      e.friendly = true;
+      throw e;
+    }
+  }
+}
+
 export const PRESERVE =
   "Preserve the garment's silhouette, colours, proportions, model, pose, background and every unchanged detail exactly as in the reference image. Modify only the requested elements.";
 
@@ -53,7 +77,7 @@ export async function renderViews({ fabricsSpec, sketchUrl, selectedFabrics = []
       const prompt = `${v.prompt}. Garment: ${f.render_prompt}. The first reference image is the design sketch — keep the garment identical to it.${
         swatch ? " The second reference image is the exact fabric swatch — match its texture, pattern, weave and colour precisely." : ""
       }${v.id === "technical_flat" ? "" : " Soft professional studio lighting, neutral background."}`;
-      const img = await base44.integrations.Core.GenerateImage({
+      const img = await generateImage({
         prompt,
         existing_image_urls: swatch ? [sketchUrl, swatch] : [sketchUrl],
       });
@@ -92,7 +116,7 @@ export async function renderEdit({ renders, instruction, lockedAttributes = [], 
       const prompt = `Edit the garment in the reference image: ${instruction}. ${PRESERVE}${locks}${
         swatch ? " The second reference image is the fabric swatch — keep its texture and colour unless the edit asks otherwise." : ""
       }`;
-      const img = await base44.integrations.Core.GenerateImage({
+      const img = await generateImage({
         prompt,
         existing_image_urls: swatch ? [base.url, swatch] : [base.url],
       });
@@ -124,7 +148,7 @@ export async function renderRegionEdit({ renders, instruction, annotatedUrl, fab
       const prompt = marked
         ? `The reference image is a garment photo with a region marked in bright red brush strokes. Apply this edit ONLY inside the marked region: ${instruction}. Everything outside the marked region must stay pixel-identical, and the red markings themselves must be completely removed from the result. ${PRESERVE}${locks}`
         : `Edit the garment in the reference image: ${instruction} (applied only to that specific area of the garment). ${PRESERVE}${locks}`;
-      const img = await base44.integrations.Core.GenerateImage({
+      const img = await generateImage({
         prompt,
         existing_image_urls: [marked ? annotatedUrl : base.url],
       });
@@ -152,7 +176,7 @@ export async function renderRemainingViews({ renders, version }) {
       const prompt = `${v.prompt}. The reference image shows the exact garment — reproduce the same garment, fabric and colours precisely, only changing the camera angle and framing.${
         v.id === "technical_flat" ? "" : " Soft professional studio lighting, neutral background."
       }`;
-      const img = await base44.integrations.Core.GenerateImage({ prompt, existing_image_urls: [base.url] });
+      const img = await generateImage({ prompt, existing_image_urls: [base.url] });
       return {
         fabric: base.fabric,
         url: img.url,

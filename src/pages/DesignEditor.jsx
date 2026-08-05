@@ -9,10 +9,12 @@ import EditorChat from "@/components/editor/EditorChat";
 import QuickEdits from "@/components/editor/QuickEdits";
 import RegionEditor from "@/components/editor/RegionEditor";
 import { renderEdit, renderRegionEdit, renderRemainingViews } from "@/lib/designEngine";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function DesignEditor() {
   const { id } = useParams();
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [working, setWorking] = useState(null);
   const [viewingId, setViewingId] = useState(null);
   const [regionOpen, setRegionOpen] = useState(false);
@@ -69,18 +71,37 @@ export default function DesignEditor() {
     refresh();
   };
 
+  const handleGenerationError = async (err) => {
+    setWorking(null);
+    const message = err?.friendly
+      ? err.message
+      : "Something went wrong while generating the images. Please try again.";
+    toast({ variant: "destructive", title: "Couldn't create this version", description: message });
+    await base44.entities.DesignMessage.create({
+      project_id: id,
+      version_id: current.id,
+      role: "assistant",
+      text: `I couldn't complete that edit — ${message}`,
+    });
+    refresh();
+  };
+
   const handleEdit = async (text) => {
     await base44.entities.DesignMessage.create({ project_id: id, version_id: current.id, role: "user", text });
     refresh();
     const nextNumber = Math.max(...versions.map((v) => v.version_number)) + 1;
     setWorking(`Creating V${nextNumber}…`);
-    const renders = await renderEdit({
-      renders: current.renders || [],
-      instruction: text,
-      lockedAttributes: current.locked_attributes || [],
-      version: nextNumber,
-    });
-    await commitVersion({ text, renders, nextNumber });
+    try {
+      const renders = await renderEdit({
+        renders: current.renders || [],
+        instruction: text,
+        lockedAttributes: current.locked_attributes || [],
+        version: nextNumber,
+      });
+      await commitVersion({ text, renders, nextNumber });
+    } catch (err) {
+      await handleGenerationError(err);
+    }
   };
 
   const handleRegionEdit = async ({ instruction, annotatedUrl, fabric }) => {
@@ -89,15 +110,19 @@ export default function DesignEditor() {
     refresh();
     const nextNumber = Math.max(...versions.map((v) => v.version_number)) + 1;
     setWorking(`Editing the marked area — creating V${nextNumber}…`);
-    const renders = await renderRegionEdit({
-      renders: current.renders || [],
-      instruction,
-      annotatedUrl,
-      fabric,
-      lockedAttributes: current.locked_attributes || [],
-      version: nextNumber,
-    });
-    await commitVersion({ text, renders, nextNumber });
+    try {
+      const renders = await renderRegionEdit({
+        renders: current.renders || [],
+        instruction,
+        annotatedUrl,
+        fabric,
+        lockedAttributes: current.locked_attributes || [],
+        version: nextNumber,
+      });
+      await commitVersion({ text, renders, nextNumber });
+    } catch (err) {
+      await handleGenerationError(err);
+    }
   };
 
   const regionTargets = [...new Set((current.renders || []).map((r) => r.fabric))]
@@ -115,10 +140,14 @@ export default function DesignEditor() {
 
   const handleAllAngles = async () => {
     setWorking("Shooting the remaining angles…");
-    const extra = await renderRemainingViews({ renders: viewing.renders || [], version: viewing.version_number });
-    await base44.entities.DesignVersion.update(viewing.id, { renders: [...(viewing.renders || []), ...extra] });
-    setWorking(null);
-    refresh();
+    try {
+      const extra = await renderRemainingViews({ renders: viewing.renders || [], version: viewing.version_number });
+      await base44.entities.DesignVersion.update(viewing.id, { renders: [...(viewing.renders || []), ...extra] });
+      setWorking(null);
+      refresh();
+    } catch (err) {
+      await handleGenerationError(err);
+    }
   };
 
   const missingAngles = (viewing.renders || []).some((r) => r.view_type === "Front") &&
