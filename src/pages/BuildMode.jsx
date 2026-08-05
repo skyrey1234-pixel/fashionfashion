@@ -54,11 +54,11 @@ export default function BuildMode() {
       else await base44.entities.BuildPlan.create({ project_id: id, ...data });
       setEditing(false);
       qc.invalidateQueries({ queryKey: ["build-plan", id] });
-    } catch {
+    } catch (err) {
       toast({
         variant: "destructive",
         title: "Couldn't draft the build plan",
-        description: "Something went wrong while generating the blueprint. Please try again.",
+        description: err?.message || "Something went wrong while generating the blueprint. Please try again.",
       });
     }
     setGenerating(false);
