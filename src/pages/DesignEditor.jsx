@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Camera, Lasso } from "lucide-react";
+import { Loader2, Camera, Lasso, Hammer } from "lucide-react";
 import RenderGallery from "@/components/studio/RenderGallery";
 import VersionHistory from "@/components/editor/VersionHistory";
 import EditorChat from "@/components/editor/EditorChat";
@@ -180,6 +180,12 @@ export default function DesignEditor() {
               <Lasso className="w-3.5 h-3.5" /> Edit an area
             </button>
             <ExportImages projectName={project.name} version={viewing} disabled={!!working} />
+            <Link
+              to={`/project/${id}/build`}
+              className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-amber-800 hover:text-stone-900 transition-colors"
+            >
+              <Hammer className="w-3.5 h-3.5" /> Build mode
+            </Link>
           </div>
           <RegionEditor open={regionOpen} onOpenChange={setRegionOpen} targets={regionTargets} onSubmit={handleRegionEdit} />
           {missingAngles && (
