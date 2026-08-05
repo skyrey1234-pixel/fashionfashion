@@ -2,14 +2,15 @@ import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Camera, Lasso, Hammer } from "lucide-react";
+import { Loader2, Camera, Lasso, Hammer, Rotate3D } from "lucide-react";
 import RenderGallery from "@/components/studio/RenderGallery";
 import VersionHistory from "@/components/editor/VersionHistory";
 import EditorChat from "@/components/editor/EditorChat";
 import QuickEdits from "@/components/editor/QuickEdits";
 import RegionEditor from "@/components/editor/RegionEditor";
 import ExportImages from "@/components/editor/ExportImages";
-import { renderEdit, renderRegionEdit, renderRemainingViews } from "@/lib/designEngine";
+import TurntableViewer from "@/components/editor/TurntableViewer";
+import { renderEdit, renderRegionEdit, renderRemainingViews, renderTurntable, TURNTABLE_PREFIX } from "@/lib/designEngine";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function DesignEditor() {
@@ -19,6 +20,7 @@ export default function DesignEditor() {
   const [working, setWorking] = useState(null);
   const [viewingId, setViewingId] = useState(null);
   const [regionOpen, setRegionOpen] = useState(false);
+  const [turntableOpen, setTurntableOpen] = useState(false);
 
   const { data: project } = useQuery({
     queryKey: ["project", id],
@@ -142,7 +144,7 @@ export default function DesignEditor() {
   const handleAllAngles = async () => {
     setWorking("Shooting the remaining angles…");
     try {
-      const extra = await renderRemainingViews({ renders: viewing.renders || [], version: viewing.version_number });
+      const extra = await renderRemainingViews({ renders: galleryRenders, version: viewing.version_number });
       await base44.entities.DesignVersion.update(viewing.id, { renders: [...(viewing.renders || []), ...extra] });
       setWorking(null);
       refresh();
@@ -151,8 +153,24 @@ export default function DesignEditor() {
     }
   };
 
-  const missingAngles = (viewing.renders || []).some((r) => r.view_type === "Front") &&
-    new Set((viewing.renders || []).map((r) => r.view_type)).size < 8;
+  const handleTurntable = async (fabric) => {
+    const group = (viewing.renders || []).filter((r) => r.fabric === fabric);
+    const base = group.find((r) => r.view_type === "Front") || group[0];
+    setWorking("Shooting a full 360° rotation…");
+    try {
+      const frames = await renderTurntable({ base, version: viewing.version_number });
+      await base44.entities.DesignVersion.update(viewing.id, { renders: [...(viewing.renders || []), ...frames] });
+      setWorking(null);
+      refresh();
+    } catch (err) {
+      await handleGenerationError(err);
+    }
+  };
+
+  const galleryRenders = (viewing.renders || []).filter((r) => !r.view_type?.startsWith(TURNTABLE_PREFIX));
+
+  const missingAngles = galleryRenders.some((r) => r.view_type === "Front") &&
+    new Set(galleryRenders.map((r) => r.view_type)).size < 8;
 
   return (
     <div className="max-w-6xl w-full mx-auto px-4 py-8">
@@ -166,8 +184,8 @@ export default function DesignEditor() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
         <div className="space-y-5">
-          {viewing.renders?.length > 0 ? (
-            <RenderGallery renders={viewing.renders} />
+          {galleryRenders.length > 0 ? (
+            <RenderGallery renders={galleryRenders} />
           ) : (
             <p className="text-sm text-stone-500">No renders in this version.</p>
           )}
@@ -179,6 +197,13 @@ export default function DesignEditor() {
             >
               <Lasso className="w-3.5 h-3.5" /> Edit an area
             </button>
+            <button
+              onClick={() => setTurntableOpen(true)}
+              disabled={regionTargets.length === 0}
+              className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-amber-800 hover:text-stone-900 transition-colors disabled:opacity-40"
+            >
+              <Rotate3D className="w-3.5 h-3.5" /> 360° turntable
+            </button>
             <ExportImages projectName={project.name} version={viewing} disabled={!!working} />
             <Link
               to={`/project/${id}/build`}
@@ -188,6 +213,13 @@ export default function DesignEditor() {
             </Link>
           </div>
           <RegionEditor open={regionOpen} onOpenChange={setRegionOpen} targets={regionTargets} onSubmit={handleRegionEdit} />
+          <TurntableViewer
+            open={turntableOpen}
+            onOpenChange={setTurntableOpen}
+            renders={viewing.renders || []}
+            working={working}
+            onGenerate={handleTurntable}
+          />
           {missingAngles && (
             <button
               onClick={handleAllAngles}

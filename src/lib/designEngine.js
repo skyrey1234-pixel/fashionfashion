@@ -164,6 +164,28 @@ export async function renderRegionEdit({ renders, instruction, annotatedUrl, fab
   );
 }
 
+export const TURNTABLE_PREFIX = "Turntable ";
+
+/** Generate an evenly-spaced 360° set of frames for one fabric, from its Front image. */
+export async function renderTurntable({ base, frames = 12, version }) {
+  const step = 360 / frames;
+  const angles = Array.from({ length: frames }, (_, i) => Math.round(i * step));
+  return Promise.all(
+    angles.map(async (angle) => {
+      const prompt = `Full-length studio photograph of the exact garment in the reference image, rotated ${angle} degrees clockwise around its vertical axis from the front-facing view (0 degrees is straight-on front, 90 is the right side profile, 180 is the back, 270 is the left side profile). Reproduce the same garment, model, pose, fabric, colours, lighting, framing and background precisely — only the rotation of the viewpoint changes. Soft professional studio lighting, neutral background, subject centred at the same scale in every frame.`;
+      const img = await generateImage({ prompt, existing_image_urls: [base.url] });
+      return {
+        fabric: base.fabric,
+        url: img.url,
+        view_type: `${TURNTABLE_PREFIX}${angle}°`,
+        colorway: base.colorway || "",
+        version,
+        settings: { prompt, swatch_url: base.settings?.swatch_url || "", sketch_url: base.settings?.sketch_url || "" },
+      };
+    })
+  );
+}
+
 /** Fill in every remaining camera angle for a version, using its Front image as the reference. */
 export async function renderRemainingViews({ renders, version }) {
   const jobs = groupByFabric(renders).flatMap((group) => {
