@@ -87,6 +87,19 @@ export default function Studio() {
         role: "assistant",
         text: `${spec.summary}\n\nVersion 1 of "${spec.name}" is ready. Tell me what to change and I'll keep everything else exactly the same.`,
       },
+      ...(spec.styling_advice || spec.variations?.length
+        ? [
+            {
+              project_id: project.id,
+              version_id: version.id,
+              role: "assistant",
+              text: `${spec.styling_advice || ""}${
+                spec.variations?.length ? "\n\nWant to explore a variation? Tap one below or describe your own." : ""
+              }`.trim(),
+              suggestions: spec.variations || [],
+            },
+          ]
+        : []),
     ]);
 
     setWorking(null);

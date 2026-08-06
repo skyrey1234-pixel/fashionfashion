@@ -25,7 +25,23 @@ export default function EditorChat({ messages, working, onSend }) {
       <div className="flex-1 overflow-y-auto space-y-4 pr-1">
         {messages.map((m) => (
           <ChatMessage key={m.id} role={m.role}>
-            <span className="whitespace-pre-line">{m.text}</span>
+            <div>
+              <span className="whitespace-pre-line">{m.text}</span>
+              {m.suggestions?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                  {m.suggestions.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => onSend(s)}
+                      disabled={!!working}
+                      className="text-[11px] rounded-full border border-stone-300 bg-white px-3 py-1.5 text-stone-600 hover:border-stone-900 hover:text-stone-900 transition-colors disabled:opacity-40"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </ChatMessage>
         ))}
         {working && (

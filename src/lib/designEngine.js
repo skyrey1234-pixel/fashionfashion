@@ -37,6 +37,8 @@ Create a design concept. Respond with:
 - name: a chic, short name for the piece (max 5 words)
 - summary: 2-3 sentences describing the design (silhouette, details, mood) written warmly to the client
 - sketch_prompt: a detailed prompt for generating a black-and-white fashion illustration sketch of this exact garment on a croquis figure, pencil/ink style, white background
+- styling_advice: 2-3 warm sentences of styling advice for the client — what to pair this piece with, occasions, shoes/accessories
+- variations: exactly 4 short design variation ideas (4-8 words each) the client could try next, e.g. a different neckline, length, colourway or trim
 - fabrics: ${
       selectedFabrics.length > 0
         ? `exactly these ${selectedFabrics.length} fabrics from the client's own library — use their exact names and honor their described texture and pattern: ${selectedFabrics
@@ -50,6 +52,8 @@ Create a design concept. Respond with:
         name: { type: "string" },
         summary: { type: "string" },
         sketch_prompt: { type: "string" },
+        styling_advice: { type: "string" },
+        variations: { type: "array", items: { type: "string" } },
         fabrics: {
           type: "array",
           items: {
