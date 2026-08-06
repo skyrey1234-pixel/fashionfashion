@@ -20,6 +20,7 @@ import Fabrics from '@/pages/Fabrics';
 import DesignEditor from '@/pages/DesignEditor';
 import Gallery from '@/pages/Gallery';
 import BuildMode from '@/pages/BuildMode';
+import MixMatch from '@/pages/MixMatch';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
           <Route path="/project/:id" element={<DesignEditor />} />
           <Route path="/project/:id/build" element={<BuildMode />} />
           <Route path="/gallery" element={<Gallery />} />
+          <Route path="/mix" element={<MixMatch />} />
           <Route path="/fabrics" element={<Fabrics />} />
         </Route>
       </Route>

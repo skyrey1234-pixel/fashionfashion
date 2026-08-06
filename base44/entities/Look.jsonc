@@ -1,0 +1,29 @@
+{
+  "name": "Look",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "pieces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "image_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

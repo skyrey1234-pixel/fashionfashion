@@ -1,6 +1,6 @@
 import React from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Sparkles, GalleryVerticalEnd, Layers, LayoutGrid } from "lucide-react";
+import { Sparkles, GalleryVerticalEnd, Layers, LayoutGrid, Shirt } from "lucide-react";
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -27,6 +27,9 @@ export default function Layout() {
             </Link>
             <Link to="/gallery" className={linkCls(pathname === "/gallery")}>
               <LayoutGrid className="w-4 h-4" /> Gallery
+            </Link>
+            <Link to="/mix" className={linkCls(pathname === "/mix")}>
+              <Shirt className="w-4 h-4" /> Mix &amp; Match
             </Link>
           </nav>
         </div>

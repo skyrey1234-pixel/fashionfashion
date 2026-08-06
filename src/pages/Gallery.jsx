@@ -3,9 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { Loader2, CheckSquare } from "lucide-react";
-import VersionCard from "@/components/gallery/VersionCard";
+import VersionRenders from "@/components/gallery/VersionRenders";
 import BulkActionBar from "@/components/gallery/BulkActionBar";
-import { exportVersionsPdf } from "@/lib/exportVersions";
+import { exportVersionsZip } from "@/lib/exportVersions";
 
 export default function Gallery() {
   const queryClient = useQueryClient();
@@ -58,7 +58,7 @@ export default function Gallery() {
 
   const handleExport = async () => {
     setExporting(true);
-    await exportVersionsPdf(selectedItems);
+    await exportVersionsZip(selectedItems);
     setExporting(false);
   };
 
@@ -101,7 +101,7 @@ export default function Gallery() {
       <p className="text-stone-500 text-sm mb-10">
         {selectMode
           ? "Tap versions to select them, then export or delete them together."
-          : "Every version of every design — your full creative record."}
+          : "Every image of every version — your full creative record. Click any picture to view it full size."}
       </p>
 
       {byProject.length === 0 && (
@@ -124,12 +124,11 @@ export default function Gallery() {
                 {versions.length} version{versions.length > 1 ? "s" : ""}
               </span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="space-y-4">
               {versions.map((v) => (
-                <VersionCard
+                <VersionRenders
                   key={v.id}
                   version={v}
-                  projectId={project.id}
                   isCurrent={v.id === project.current_version_id}
                   selectMode={selectMode}
                   selected={selectedIds.has(v.id)}
