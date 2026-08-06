@@ -244,7 +244,11 @@ export default function DesignEditor() {
         <div className="lg:h-[70vh] lg:sticky lg:top-6 bg-white/60 rounded-2xl border border-stone-200 p-4 flex flex-col">
           <EditorChat messages={messages} working={working} onSend={handleEdit} />
           <div className="pt-3">
-            <QuickEdits onPick={handleEdit} disabled={!!working} />
+            <QuickEdits
+              onPick={handleEdit}
+              disabled={!!working}
+              designContext={`${project.name}. ${project.description || project.original_prompt || ""}`}
+            />
           </div>
         </div>
       </div>
