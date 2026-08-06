@@ -1,0 +1,61 @@
+{
+  "name": "MockupDesign",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "product_id": {
+      "type": "string"
+    },
+    "preview_url": {
+      "type": "string"
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "text"
+            ]
+          },
+          "url": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number"
+          },
+          "rotation": {
+            "type": "number"
+          },
+          "color": {
+            "type": "string"
+          },
+          "font": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "name",
+    "product_id"
+  ]
+}

@@ -21,6 +21,8 @@ import DesignEditor from '@/pages/DesignEditor';
 import Gallery from '@/pages/Gallery';
 import BuildMode from '@/pages/BuildMode';
 import MixMatch from '@/pages/MixMatch';
+import Mockups from '@/pages/Mockups';
+import MockupEditor from '@/pages/MockupEditor';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -61,6 +63,9 @@ const AuthenticatedApp = () => {
           <Route path="/project/:id/build" element={<BuildMode />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/mix" element={<MixMatch />} />
+          <Route path="/mockups" element={<Mockups />} />
+          <Route path="/mockups/new" element={<MockupEditor />} />
+          <Route path="/mockups/:id" element={<MockupEditor />} />
           <Route path="/fabrics" element={<Fabrics />} />
         </Route>
       </Route>
