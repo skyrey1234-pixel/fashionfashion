@@ -11,6 +11,34 @@ export default function LayerControls({ layer, onChange, onDelete }) {
     return <p className="text-xs text-stone-500">Add an image or text, then tap it on the garment to adjust it.</p>;
   }
 
+  if (layer.type === "pattern") {
+    return (
+      <div className="space-y-4">
+        <p className="text-xs text-stone-500">This print repeats across the whole garment.</p>
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-stone-400 mb-2">Pattern scale</p>
+          <Slider value={[layer.width]} min={5} max={100} step={1} onValueChange={([v]) => onChange({ width: v })} />
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-stone-400 mb-2">Opacity</p>
+          <Slider
+            value={[Math.round((layer.opacity ?? 1) * 100)]}
+            min={10}
+            max={100}
+            step={1}
+            onValueChange={([v]) => onChange({ opacity: v / 100 })}
+          />
+        </div>
+        <button
+          onClick={onDelete}
+          className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-red-800 transition-colors"
+        >
+          <Trash2 className="w-3.5 h-3.5" /> Remove this print
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {layer.type === "text" && (

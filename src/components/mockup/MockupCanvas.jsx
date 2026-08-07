@@ -44,7 +44,24 @@ export default function MockupCanvas({ product, layers, selectedId, onSelect, on
             style={{ left: `${area.x}%`, top: `${area.y}%`, width: `${area.width}%`, height: `${area.height}%` }}
           />
         )}
-        {layers.map((l) => (
+        {layers
+          .filter((l) => l.type === "pattern")
+          .map((l) => (
+            <div
+              key={l.id}
+              onPointerDown={() => onSelect(l.id)}
+              className="absolute inset-0 cursor-pointer"
+              style={{
+                backgroundImage: `url(${l.url})`,
+                backgroundSize: `${l.width}%`,
+                backgroundRepeat: "repeat",
+                clipPath: product.body_clip,
+                mixBlendMode: "multiply",
+                opacity: l.opacity ?? 1,
+              }}
+            />
+          ))}
+        {layers.filter((l) => l.type !== "pattern").map((l) => (
           <div
             key={l.id}
             onPointerDown={(e) => startDrag(e, l)}

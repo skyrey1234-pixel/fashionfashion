@@ -23,7 +23,8 @@
             "type": "string",
             "enum": [
               "image",
-              "text"
+              "text",
+              "pattern"
             ]
           },
           "url": {
@@ -42,6 +43,9 @@
             "type": "number"
           },
           "rotation": {
+            "type": "number"
+          },
+          "opacity": {
             "type": "number"
           },
           "color": {

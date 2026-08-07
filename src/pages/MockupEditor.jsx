@@ -73,6 +73,15 @@ export default function MockupEditor() {
     setUploading(false);
   };
 
+  const handleAddPattern = async (file) => {
+    setUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const layer = { id: uid(), type: "pattern", url: file_url, x: 50, y: 50, width: 25, opacity: 1 };
+    setLayers((prev) => [...prev, layer]);
+    setSelectedId(layer.id);
+    setUploading(false);
+  };
+
   const handleAddText = () => {
     const layer = {
       id: uid(),
@@ -148,6 +157,7 @@ export default function MockupEditor() {
           <MockupToolbar
             onAddImage={handleAddImage}
             onAddText={handleAddText}
+            onAddPattern={handleAddPattern}
             onDownload={handleDownload}
             onSave={handleSave}
             uploading={uploading}

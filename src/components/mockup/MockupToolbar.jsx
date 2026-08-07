@@ -1,11 +1,21 @@
 import React, { useRef } from "react";
-import { ImagePlus, Type, Download, Save, Loader2 } from "lucide-react";
+import { ImagePlus, Type, Download, Save, Loader2, Grid2x2 } from "lucide-react";
 
 const btn =
   "flex items-center gap-1.5 text-[11px] uppercase tracking-widest border border-stone-300 rounded-full px-4 py-2 text-stone-600 hover:border-stone-900 hover:text-stone-900 transition-colors disabled:opacity-40";
 
-export default function MockupToolbar({ onAddImage, onAddText, onDownload, onSave, uploading, saving, downloading }) {
+export default function MockupToolbar({
+  onAddImage,
+  onAddText,
+  onAddPattern,
+  onDownload,
+  onSave,
+  uploading,
+  saving,
+  downloading,
+}) {
   const fileRef = useRef(null);
+  const patternRef = useRef(null);
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -25,6 +35,20 @@ export default function MockupToolbar({ onAddImage, onAddText, onDownload, onSav
       </button>
       <button className={btn} onClick={onAddText}>
         <Type className="w-3.5 h-3.5" /> Add text
+      </button>
+      <input
+        ref={patternRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onAddPattern(file);
+          e.target.value = "";
+        }}
+      />
+      <button className={btn} onClick={() => patternRef.current?.click()} disabled={uploading}>
+        <Grid2x2 className="w-3.5 h-3.5" /> All-over print
       </button>
       <button className={btn} onClick={onDownload} disabled={downloading}>
         {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Download
