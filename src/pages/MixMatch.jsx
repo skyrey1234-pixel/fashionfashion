@@ -13,6 +13,7 @@ export default function MixMatch() {
   const { toast } = useToast();
   const [selected, setSelected] = useState([]);
   const [creating, setCreating] = useState(false);
+  const [variatingId, setVariatingId] = useState(null);
   const [openLookIndex, setOpenLookIndex] = useState(null);
 
   const { data: projects } = useQuery({
@@ -81,6 +82,29 @@ export default function MixMatch() {
     setCreating(false);
   };
 
+  const handleMore = async (look) => {
+    setVariatingId(look.id);
+    try {
+      const img = await base44.integrations.Core.GenerateImage({
+        prompt: `Full-length professional fashion photograph of one model wearing the exact same complete outfit shown in the reference image — reproduce every garment's design, silhouette, fabric, colour and details faithfully. Change only the model's pose, camera angle and styling attitude for a fresh editorial shot. Soft professional studio lighting, neutral background.`,
+        existing_image_urls: [look.image_url],
+      });
+      await base44.entities.Look.create({
+        name: `${look.name} — variation`,
+        pieces: look.pieces || [],
+        image_url: img.url,
+      });
+      qc.invalidateQueries({ queryKey: ["looks"] });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Couldn't generate a variation",
+        description: "Something went wrong. Please try again.",
+      });
+    }
+    setVariatingId(null);
+  };
+
   const handleDelete = async (look) => {
     await base44.entities.Look.delete(look.id);
     qc.invalidateQueries({ queryKey: ["looks"] });
@@ -120,7 +144,15 @@ export default function MixMatch() {
           <p className="font-display text-2xl text-stone-900 mb-4">Your Looks</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {looks.map((look, i) => (
-              <LookCard key={look.id} look={look} onDelete={handleDelete} onOpen={() => setOpenLookIndex(i)} />
+              <LookCard
+                key={look.id}
+                look={look}
+                onDelete={handleDelete}
+                onOpen={() => setOpenLookIndex(i)}
+                onMore={handleMore}
+                generating={variatingId === look.id}
+                disabled={!!variatingId}
+              />
             ))}
           </div>
           <ImageLightbox

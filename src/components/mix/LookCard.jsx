@@ -1,9 +1,9 @@
 import React from "react";
 import { Image } from "@/components/ui/image";
-import { Trash2 } from "lucide-react";
+import { Trash2, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function LookCard({ look, onDelete, onOpen }) {
+export default function LookCard({ look, onDelete, onOpen, onMore, generating, disabled }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -30,6 +30,14 @@ export default function LookCard({ look, onDelete, onOpen }) {
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
+      <button
+        onClick={() => onMore(look)}
+        disabled={disabled}
+        className="w-full flex items-center justify-center gap-1.5 text-[11px] uppercase tracking-widest text-amber-800 hover:text-stone-900 border-t border-stone-100 py-2.5 transition-colors disabled:opacity-40"
+      >
+        {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+        {generating ? "Generating…" : "Generate more"}
+      </button>
     </motion.div>
   );
 }
