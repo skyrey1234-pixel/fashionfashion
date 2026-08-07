@@ -29,7 +29,7 @@ export default function BulkActionBar({ count, onExport, onDelete, onCancel, exp
         disabled={count === 0 || busy}
         className="flex items-center gap-1.5 text-sm rounded-full px-4 py-2 hover:bg-stone-700 transition-colors disabled:opacity-40"
       >
-        {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Export
+        {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Export PNGs (ZIP)
       </button>
       <AlertDialog>
         <AlertDialogTrigger asChild>
