@@ -2,8 +2,9 @@ import React from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-/** Full-size image viewer. `items` = [{url, label}], `index` = open item, or null. */
-export default function ImageLightbox({ items, index, onClose, onNavigate }) {
+/** Full-size image viewer. `items` = [{url, label}], `index` = open item, or null.
+ * Optional `renderAction(index)` renders extra controls under the image. */
+export default function ImageLightbox({ items, index, onClose, onNavigate, renderAction }) {
   const item = index !== null ? items[index] : null;
 
   return (
@@ -42,6 +43,7 @@ export default function ImageLightbox({ items, index, onClose, onNavigate }) {
                 {index + 1} / {items.length}
               </p>
             )}
+            {renderAction && <div className="flex justify-center pt-1">{renderAction(index)}</div>}
           </>
         )}
       </DialogContent>

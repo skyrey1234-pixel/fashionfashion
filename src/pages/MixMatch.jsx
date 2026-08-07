@@ -71,7 +71,8 @@ export default function MixMatch() {
         image_url: img.url,
       });
       setSelected([]);
-      qc.invalidateQueries({ queryKey: ["looks"] });
+      await qc.invalidateQueries({ queryKey: ["looks"] });
+      setOpenLookIndex(0); // newest look is first — show it right away
     } catch {
       toast({
         variant: "destructive",
@@ -94,7 +95,8 @@ export default function MixMatch() {
         pieces: look.pieces || [],
         image_url: img.url,
       });
-      qc.invalidateQueries({ queryKey: ["looks"] });
+      await qc.invalidateQueries({ queryKey: ["looks"] });
+      setOpenLookIndex(0); // show the fresh variation
     } catch {
       toast({
         variant: "destructive",
@@ -160,6 +162,20 @@ export default function MixMatch() {
             index={openLookIndex}
             onClose={() => setOpenLookIndex(null)}
             onNavigate={setOpenLookIndex}
+            renderAction={(i) => (
+              <button
+                onClick={() => handleMore(looks[i])}
+                disabled={!!variatingId}
+                className="flex items-center gap-2 text-sm rounded-full px-5 py-2.5 bg-stone-900 text-stone-50 hover:bg-amber-800 transition-colors disabled:opacity-40"
+              >
+                {variatingId === looks[i].id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Wand2 className="w-4 h-4" />
+                )}
+                {variatingId === looks[i].id ? "Generating another look…" : "Generate more like this"}
+              </button>
+            )}
           />
         </div>
       )}
